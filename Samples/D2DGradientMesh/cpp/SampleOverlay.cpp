@@ -160,7 +160,7 @@ void SampleOverlay::Render()
     {
         m_deviceResources->GetD2DDeviceContext()->SaveDrawingState(m_stateBlock.Get());
 
-        m_deviceResources->GetD2DDeviceContext()->BeginDraw();
+        //m_deviceResources->GetD2DDeviceContext()->BeginDraw();
         m_deviceResources->GetD2DDeviceContext()->SetTransform(m_deviceResources->GetOrientationTransform2D());
         m_deviceResources->GetD2DDeviceContext()->DrawBitmap(
             m_logoBitmap.Get(),
@@ -175,11 +175,11 @@ void SampleOverlay::Render()
 
         // We ignore D2DERR_RECREATE_TARGET here. This error indicates that the device
         // is lost. It will be handled during the next call to Present.
-        HRESULT hr = m_deviceResources->GetD2DDeviceContext()->EndDraw();
-        if (hr != D2DERR_RECREATE_TARGET)
-        {
-            DX::ThrowIfFailed(hr);
-        }
+        //HRESULT hr = m_deviceResources->GetD2DDeviceContext()->EndDraw();
+        //if (hr != D2DERR_RECREATE_TARGET)
+        //{
+        //    DX::ThrowIfFailed(hr);
+        //}
 
         m_deviceResources->GetD2DDeviceContext()->RestoreDrawingState(m_stateBlock.Get());
     }

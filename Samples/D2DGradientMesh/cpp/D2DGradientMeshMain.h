@@ -1,4 +1,4 @@
-﻿//// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+//// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 //// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 //// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 //// PARTICULAR PURPOSE.
@@ -32,6 +32,10 @@ namespace D2DGradientMesh
 
         // Sample renderer class.
         std::unique_ptr<D2DGradientMeshRenderer> m_sceneRenderer;
+
+        std::unique_ptr<D2DDashLineRenderer> m_lineRenderer;
+
+        std::unique_ptr<D2DDashCircleRenderer> m_circleRenderer;
 
         // Sample overlay class.
         std::unique_ptr<SampleOverlay> m_sampleOverlay;

@@ -1,4 +1,4 @@
-﻿//// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+//// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 //// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 //// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 //// PARTICULAR PURPOSE.
@@ -113,10 +113,6 @@ void D2DGradientMeshRenderer::ReleaseDeviceDependentResources()
 // Renders one frame.
 void D2DGradientMeshRenderer::Render()
 {
-    m_deviceResources->GetD2DDeviceContext()->BeginDraw();
-
-    m_deviceResources->GetD2DDeviceContext()->Clear(D2D1::ColorF(D2D1::ColorF::CornflowerBlue));
-
     Windows::Foundation::Size logicalSize = m_deviceResources->GetLogicalSize();
 
     // Translate to the center of the window.
@@ -128,11 +124,129 @@ void D2DGradientMeshRenderer::Render()
     // Draw the gradient mesh.
     m_deviceResources->GetD2DDeviceContext()->DrawGradientMesh(m_gradientMesh.Get());
 
-    // We ignore D2DERR_RECREATE_TARGET here. This error indicates that the device
-    // is lost. It will be handled during the next call to Present.
-    HRESULT hr = m_deviceResources->GetD2DDeviceContext()->EndDraw();
-    if (hr != D2DERR_RECREATE_TARGET)
-    {
-        DX::ThrowIfFailed(hr);
-    }
 }
+
+D2DDashLineRenderer::D2DDashLineRenderer(
+    const std::shared_ptr<DX::DeviceResources>& deviceResources,
+    float dashOffset,
+    std::pair<float, float> begin,
+    std::pair<float, float> end
+):
+m_deviceResources(deviceResources),
+m_dashOffset(dashOffset),
+m_begin(begin),
+m_end(end)
+{
+    CreateDeviceDependentResources();
+    CreateWindowSizeDependentResources();
+}
+
+void D2DDashLineRenderer::CreateDeviceDependentResources()
+{
+    m_deviceResources->GetD2DDeviceContext()->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_solidBrush);
+
+    D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties;
+    strokeStyleProperties.dashStyle = D2D1_DASH_STYLE_DASH;
+    strokeStyleProperties.dashOffset = m_dashOffset;
+    strokeStyleProperties.dashCap = D2D1_CAP_STYLE_FLAT;
+    strokeStyleProperties.miterLimit = 10.0f;
+    strokeStyleProperties.lineJoin = D2D1_LINE_JOIN_ROUND;
+    strokeStyleProperties.startCap = D2D1_CAP_STYLE_FLAT;
+    strokeStyleProperties.endCap = D2D1_CAP_STYLE_FLAT;
+
+    DX::ThrowIfFailed(
+        m_deviceResources->GetD2DFactory()->CreateStrokeStyle(&strokeStyleProperties, NULL, 0, &m_strokeStyle)
+    );
+}
+
+void D2DDashLineRenderer::CreateWindowSizeDependentResources()
+{
+
+}
+
+void D2DDashLineRenderer::ReleaseDeviceDependentResources()
+{
+    m_strokeStyle.Reset();
+    m_solidBrush.Reset();
+}
+
+void D2DDashLineRenderer::Render()
+{
+
+
+    Windows::Foundation::Size logicalSize = m_deviceResources->GetLogicalSize();
+
+    // Translate to the center of the window.
+    m_deviceResources->GetD2DDeviceContext()->SetTransform(
+        D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
+        m_deviceResources->GetOrientationTransform2D()
+    );
+
+    // Draw the gradient mesh.
+    m_deviceResources->GetD2DDeviceContext()->DrawLine(
+        { m_begin.first,  m_begin.second },
+        { m_end.first,  m_end.second },
+        *m_solidBrush.GetAddressOf(),
+        2.0f,
+        *m_strokeStyle.GetAddressOf());
+
+
+}
+
+
+D2DDashCircleRenderer::D2DDashCircleRenderer(
+    const std::shared_ptr<DX::DeviceResources>& deviceResources,
+    std::pair<float, float> center,
+    float radius
+):
+    m_deviceResources(deviceResources),
+    m_radius(radius),
+    m_center(center)
+{
+    CreateDeviceDependentResources();
+    CreateWindowSizeDependentResources();
+}
+void D2DDashCircleRenderer::CreateDeviceDependentResources()
+{
+    m_deviceResources->GetD2DDeviceContext()->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_solidBrush);
+
+    D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties;
+    strokeStyleProperties.dashStyle = D2D1_DASH_STYLE_DASH;
+    strokeStyleProperties.dashOffset = 0.0f;
+    strokeStyleProperties.dashCap = D2D1_CAP_STYLE_FLAT;
+    strokeStyleProperties.miterLimit = 10.0f;
+    strokeStyleProperties.lineJoin = D2D1_LINE_JOIN_ROUND;
+    strokeStyleProperties.startCap = D2D1_CAP_STYLE_FLAT;
+    strokeStyleProperties.endCap = D2D1_CAP_STYLE_FLAT;
+
+    DX::ThrowIfFailed(
+        m_deviceResources->GetD2DFactory()->CreateStrokeStyle(&strokeStyleProperties, NULL, 0, &m_strokeStyle)
+    );
+}
+
+void D2DDashCircleRenderer::CreateWindowSizeDependentResources()
+{
+}
+
+void D2DDashCircleRenderer::ReleaseDeviceDependentResources()
+{
+    m_strokeStyle.Reset();
+    m_solidBrush.Reset();
+}
+
+void D2DDashCircleRenderer::Render()
+{
+
+    Windows::Foundation::Size logicalSize = m_deviceResources->GetLogicalSize();
+
+    // Translate to the center of the window.
+    m_deviceResources->GetD2DDeviceContext()->SetTransform(
+        D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
+        m_deviceResources->GetOrientationTransform2D()
+    );
+
+    // Draw the gradient mesh.
+    m_deviceResources->GetD2DDeviceContext()->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(m_center.first, m_center.second), m_radius, m_radius), *m_solidBrush.GetAddressOf(), 2.0f, *m_strokeStyle.GetAddressOf());
+
+}
+

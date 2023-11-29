@@ -1,4 +1,4 @@
-﻿//// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+//// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 //// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 //// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 //// PARTICULAR PURPOSE.
@@ -8,7 +8,8 @@
 #pragma once
 
 #include <ppltasks.h>
-
+#include <iostream>
+#include <cstdlib>
 namespace DX
 {
     inline void ThrowIfFailed(HRESULT hr)
@@ -61,6 +62,49 @@ namespace DX
         static const float dipsPerInch = 96.0f;
         return pixels * dipsPerInch / dpi; // Do not round.
     }
+
+    inline void addToHardwareAccelerationList(const std::string& programPath)
+    {
+        std::string command;
+
+#ifdef _WIN32
+        const char* nvidiaCmd = "nvidia-smi --add";
+        const char* amdCmd = "AMDVLK --add-application";
+
+        char* buf = nullptr;
+        size_t sz = 0;
+        bool val = false;
+        if (_dupenv_s(&buf, &sz, "PROCESSOR_IDENTIFIER") == 0 && buf != nullptr)
+        {
+            if (strstr(buf, "NVIDIA"))
+            {
+                command = nvidiaCmd;
+                val = true;
+            }
+            else if (strstr(buf, "AMD"))
+            {
+                command = amdCmd;
+                val = true;
+            }
+        }
+
+        free(buf);
+        if (!val)
+        {
+            std::cout << "Unsupported graphics card brand.\n";
+            return;
+        }
+
+        std::string fullCommand = command + " \"" + programPath + "\"";
+        int result = system(fullCommand.c_str());
+
+#else
+        std::cout << "Only supported on Windows.\n";
+#endif
+
+        std::cout << "The program has been added to the hardware acceleration list.\n";
+    }
+
 
 #if defined(_DEBUG)
     // Check for SDK Layer support.
