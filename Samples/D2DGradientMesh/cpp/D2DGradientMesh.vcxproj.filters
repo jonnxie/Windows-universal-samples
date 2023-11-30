@@ -7,6 +7,7 @@
     <ClCompile Include="D2DGradientMeshRenderer.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="DeviceResources.cpp" />
+    <ClCompile Include="D2DLightLineRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DirectXHelper.h" />
@@ -16,6 +17,7 @@
     <ClInclude Include="D2DGradientMeshRenderer.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="DeviceResources.h" />
+    <ClInclude Include="D2DLightLineRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="$(SharedContentDir)\media\smalltile-sdk.png">

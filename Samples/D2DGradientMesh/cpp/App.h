@@ -11,7 +11,7 @@
 #include "DeviceResources.h"
 #include "D2DGradientMeshMain.h"
 
-namespace D2DGradientMesh
+namespace D2DTest
 {
     // Main entry point for our app. Connects the app with the Windows shell and handles application lifecycle events.
     ref class App sealed : public Windows::ApplicationModel::Core::IFrameworkView

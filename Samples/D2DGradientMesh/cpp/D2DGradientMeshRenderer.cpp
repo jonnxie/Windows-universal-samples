@@ -10,7 +10,7 @@
 
 #include "DirectXHelper.h"
 
-using namespace D2DGradientMesh;
+using namespace D2DTest;
 
 using namespace DirectX;
 using namespace Windows::Foundation;

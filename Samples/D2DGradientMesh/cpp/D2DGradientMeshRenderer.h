@@ -9,7 +9,7 @@
 
 #include "DeviceResources.h"
 
-namespace D2DGradientMesh
+namespace D2DTest
 {
     // This sample renderer instantiates a basic rendering pipeline.
     class D2DGradientMeshRenderer
@@ -53,7 +53,6 @@ namespace D2DGradientMesh
         Microsoft::WRL::ComPtr<ID2D1StrokeStyle> m_strokeStyle;
         Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> m_solidBrush;
     };
-
 
     class D2DDashCircleRenderer
     {

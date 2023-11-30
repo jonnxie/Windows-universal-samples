@@ -8,7 +8,7 @@
 #include "pch.h"
 #include "SampleOverlay.h"
 
-using namespace D2DGradientMesh;
+using namespace D2DTest;
 
 using namespace Windows::UI::Core;
 using namespace Windows::Foundation;

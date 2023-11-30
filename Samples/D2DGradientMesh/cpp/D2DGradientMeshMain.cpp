@@ -7,11 +7,11 @@
 
 #include "pch.h"
 #include "D2DGradientMeshMain.h"
-
+#include "D2DLightLineRenderer.h"
 #include <DirectXColors.h>
 #include "DirectXHelper.h"
 
-using namespace D2DGradientMesh;
+using namespace D2DTest;
 
 // Loads and initializes application assets when the application is loaded.
 D2DGradientMeshMain::D2DGradientMeshMain(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
@@ -34,6 +34,13 @@ D2DGradientMeshMain::D2DGradientMeshMain(const std::shared_ptr<DX::DeviceResourc
         { 120,90 },
         60
     ));
+
+    m_lightRenderer = std::unique_ptr<D2DLightLineRenderer>(new D2DLightLineRenderer(
+            m_deviceResources,
+            {0,90},
+            {240,90},
+            0.1
+            ));
 
     m_sampleOverlay = std::unique_ptr<SampleOverlay>(new SampleOverlay(m_deviceResources, L"Direct2D Gradient Mesh Sample"));
 }
@@ -73,6 +80,9 @@ bool D2DGradientMeshMain::Render()
     {
         DX::ThrowIfFailed(hr);
     }
+
+
+
     return true;
 }
 

@@ -9,10 +9,11 @@
 
 #include "DeviceResources.h"
 #include "D2DGradientMeshRenderer.h"
+#include "D2DLightLineRenderer.h"
 #include "SampleOverlay.h"
 
 // Renders Direct2D and 3D content on the screen.
-namespace D2DGradientMesh
+namespace D2DTest
 {
     class D2DGradientMeshMain : public DX::IDeviceNotify
     {
@@ -36,6 +37,8 @@ namespace D2DGradientMesh
         std::unique_ptr<D2DDashLineRenderer> m_lineRenderer;
 
         std::unique_ptr<D2DDashCircleRenderer> m_circleRenderer;
+
+        std::unique_ptr<D2DLightLineRenderer> m_lightRenderer;
 
         // Sample overlay class.
         std::unique_ptr<SampleOverlay> m_sampleOverlay;

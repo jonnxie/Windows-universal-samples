@@ -187,6 +187,7 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="D2DLightLineRenderer.h" />
     <ClInclude Include="DirectXHelper.h" />
     <ClInclude Include="SampleOverlay.h" />
     <ClInclude Include="App.h" />
@@ -196,6 +197,7 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="D2DLightLineRenderer.cpp" />
     <ClCompile Include="SampleOverlay.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="DeviceResources.cpp" />

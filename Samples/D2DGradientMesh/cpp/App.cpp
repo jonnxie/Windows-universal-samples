@@ -8,7 +8,7 @@
 #include "pch.h"
 #include "App.h"
 
-using namespace D2DGradientMesh;
+using namespace D2DTest;
 
 using namespace concurrency;
 using namespace Windows::ApplicationModel;

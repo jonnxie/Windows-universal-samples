@@ -12,7 +12,7 @@
 
 // This class is responsible for initializing and rendering the title overlay visible
 // at the top of the DirectX SDK samples.
-namespace D2DGradientMesh
+namespace D2DTest
 {
     class SampleOverlay
     {
