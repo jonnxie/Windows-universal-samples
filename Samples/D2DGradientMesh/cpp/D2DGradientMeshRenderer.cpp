@@ -178,7 +178,8 @@ void D2DDashLineRenderer::Render()
 
     // Translate to the center of the window.
     m_deviceResources->GetD2DDeviceContext()->SetTransform(
-        D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
+            D2D1::Matrix3x2F::Translation(0.0f, 0.0f) *
+//        D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
         m_deviceResources->GetOrientationTransform2D()
     );
 
@@ -241,7 +242,8 @@ void D2DDashCircleRenderer::Render()
 
     // Translate to the center of the window.
     m_deviceResources->GetD2DDeviceContext()->SetTransform(
-        D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
+        //D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
+        D2D1::Matrix3x2F::Translation(0.0f, 0.0f) *
         m_deviceResources->GetOrientationTransform2D()
     );
 
@@ -249,4 +251,3 @@ void D2DDashCircleRenderer::Render()
     m_deviceResources->GetD2DDeviceContext()->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(m_center.first, m_center.second), m_radius, m_radius), *m_solidBrush.GetAddressOf(), 2.0f, *m_strokeStyle.GetAddressOf());
 
 }
-
