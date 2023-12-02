@@ -39,7 +39,7 @@ D2DGradientMeshMain::D2DGradientMeshMain(const std::shared_ptr<DX::DeviceResourc
             m_deviceResources,
             {0,90},
             {240,90},
-            0.1
+            10
             ));
 
     m_sampleOverlay = std::unique_ptr<SampleOverlay>(new SampleOverlay(m_deviceResources, L"Direct2D Gradient Mesh Sample"));
@@ -57,6 +57,7 @@ void D2DGradientMeshMain::UpdateForWindowSizeChange()
     m_sceneRenderer->CreateWindowSizeDependentResources();
     m_lineRenderer->CreateWindowSizeDependentResources();
     m_circleRenderer->CreateWindowSizeDependentResources();
+    m_lightRenderer->CreateWindowSizeDependentResources();
     m_sampleOverlay->CreateWindowSizeDependentResources();
 }
 
@@ -64,24 +65,24 @@ void D2DGradientMeshMain::UpdateForWindowSizeChange()
 // Returns true if the frame was rendered and is ready to be displayed.
 bool D2DGradientMeshMain::Render()
 {
+    //泛光效果渲染
+    m_lightRenderer->Render();
 
     m_deviceResources->GetD2DDeviceContext()->BeginDraw();
 
-    m_deviceResources->GetD2DDeviceContext()->Clear(D2D1::ColorF(D2D1::ColorF::CornflowerBlue));
+    //m_deviceResources->GetD2DDeviceContext()->Clear(D2D1::ColorF(D2D1::ColorF::CornflowerBlue));
     // Render the scene objects.
-    m_sceneRenderer->Render();
-    m_lineRenderer->Render();
-    m_circleRenderer->Render();
+    //m_sceneRenderer->Render();
+    //m_lineRenderer->Render();
+    //m_circleRenderer->Render();
 
-    m_sampleOverlay->Render();
+    //m_sampleOverlay->Render();
 
     HRESULT hr = m_deviceResources->GetD2DDeviceContext()->EndDraw();
     if (hr != D2DERR_RECREATE_TARGET)
     {
         DX::ThrowIfFailed(hr);
     }
-
-
 
     return true;
 }
@@ -93,6 +94,7 @@ void D2DGradientMeshMain::OnDeviceLost()
     m_lineRenderer->ReleaseDeviceDependentResources();
     m_circleRenderer->ReleaseDeviceDependentResources();
     m_sampleOverlay->ReleaseDeviceDependentResources();
+    m_lightRenderer->ReleaseDeviceDependentResources();
 }
 
 // Notifies renderers that device resources may now be re-created.
@@ -102,5 +104,6 @@ void D2DGradientMeshMain::OnDeviceRestored()
     m_lineRenderer->CreateDeviceDependentResources();
     m_circleRenderer->CreateDeviceDependentResources();
     m_sampleOverlay->CreateDeviceDependentResources();
+    m_lightRenderer->CreateDeviceDependentResources();
     UpdateForWindowSizeChange();
 }

@@ -32,25 +32,81 @@ m_glowSize(glowSize)
 
 void D2DLightLineRenderer::CreateDeviceDependentResources()
 {
-    D2D1_BITMAP_PROPERTIES bitmapProperties =
-        D2D1::BitmapProperties(
-            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
-            m_deviceResources->GetDPI(),
-            m_deviceResources->GetDPI()
-        );
+    m_deviceResources->GetD2DDeviceContext()->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_solidBrush);
 
-    DXGI_SWAP_CHAIN_DESC desc;
+    ComPtr<IWICBitmapDecoder> wicBitmapDecoder;
     DX::ThrowIfFailed(
-        m_deviceResources->GetSwapChain()->GetDesc(&desc)
+        m_deviceResources->GetWicImagingFactory()->CreateDecoderFromFilename(
+            L"Assets\\storelogo-sdk.png",
+            nullptr,
+            GENERIC_READ,
+            WICDecodeMetadataCacheOnDemand,
+            &wicBitmapDecoder
+        )
+    );
+
+    ComPtr<IWICBitmapFrameDecode> wicBitmapFrame;
+    DX::ThrowIfFailed(
+        wicBitmapDecoder->GetFrame(0, &wicBitmapFrame)
+    );
+
+    ComPtr<IWICFormatConverter> wicFormatConverter;
+    DX::ThrowIfFailed(
+        m_deviceResources->GetWicImagingFactory()->CreateFormatConverter(&wicFormatConverter)
     );
 
     DX::ThrowIfFailed(
-        m_deviceResources->GetD2DDeviceContext()->CreateBitmap(
-            D2D1_SIZE_U{ desc.BufferDesc.Width , desc.BufferDesc.Height },
-            *(& bitmapProperties),
+        wicFormatConverter->Initialize(
+            wicBitmapFrame.Get(),
+            GUID_WICPixelFormat32bppPBGRA,
+            WICBitmapDitherTypeNone,
+            nullptr,
+            0.0,
+            WICBitmapPaletteTypeCustom  // the BGRA format has no palette so this value is ignored
+        )
+    );
+
+    double dpiX = 96.0;
+    double dpiY = 96.0;
+    DX::ThrowIfFailed(
+        wicFormatConverter->GetResolution(&dpiX, &dpiY)
+    );
+
+    DX::ThrowIfFailed(
+        m_deviceResources->GetD2DDeviceContext()->CreateBitmapFromWicBitmap(
+            wicFormatConverter.Get(),
+            BitmapProperties(
+                PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+                static_cast<float>(dpiX),
+                static_cast<float>(dpiY)
+            ),
             &m_sourceBitmap
         )
     );
+
+    DX::ThrowIfFailed(
+        m_deviceResources->GetD2DFactory()->CreateDrawingStateBlock(&m_stateBlock)
+    );
+
+    //D2D1_BITMAP_PROPERTIES sourceBitmapProperties =
+    //    D2D1::BitmapProperties(
+    //        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+    //        m_deviceResources->GetDPI(),
+    //        m_deviceResources->GetDPI()
+    //    );
+
+    //DXGI_SWAP_CHAIN_DESC desc;
+    //DX::ThrowIfFailed(
+    //    m_deviceResources->GetSwapChain()->GetDesc(&desc)
+    //);
+
+    //DX::ThrowIfFailed(
+    //    m_deviceResources->GetD2DDeviceContext()->CreateBitmap(
+    //        D2D1_SIZE_U{ desc.BufferDesc.Width , desc.BufferDesc.Height },
+    //        sourceBitmapProperties,
+    //        &m_sourceBitmap
+    //    )
+    //);
 
     ID2D1Effect* effect;
     if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1GaussianBlur, &effect)))
@@ -97,13 +153,64 @@ void D2DLightLineRenderer::CreateWindowSizeDependentResources()
 }
 
 void D2DLightLineRenderer::ReleaseDeviceDependentResources(){
-    m_strokeStyle.Reset();
     m_solidBrush.Reset();
     m_glowEffect.Reset();
+    m_sourceBitmap.Reset();
+    m_stateBlock.Reset();
 }
 
 void D2DLightLineRenderer::Render(){
+    //m_deviceResources->GetD2DDeviceContext()->SetTarget(m_sourceBitmap.Get());
 
+    m_deviceResources->GetD2DDeviceContext()->BeginDraw();
+
+    m_deviceResources->GetD2DDeviceContext()->Clear(D2D1::ColorF(D2D1::ColorF::CornflowerBlue));
+
+    Windows::Foundation::Size logicalSize = m_deviceResources->GetLogicalSize();
+
+    // Translate to the center of the window.
+    m_deviceResources->GetD2DDeviceContext()->SetTransform(
+                    D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
+            m_deviceResources->GetOrientationTransform2D()
+            );
+
+    // Draw the gradient mesh.
+    m_deviceResources->GetD2DDeviceContext()->DrawLine(
+        { m_begin.first,  m_begin.second },
+        { m_end.first,  m_end.second },
+        *m_solidBrush.GetAddressOf());
+
+    HRESULT hr = m_deviceResources->GetD2DDeviceContext()->EndDraw();
+    if (hr != D2DERR_RECREATE_TARGET)
+    {
+        DX::ThrowIfFailed(hr);
+    }
+    //m_deviceResources->GetD2DDeviceContext()->SetTarget(m_deviceResources->GetD2DTargetBitmap());
+
+    //ComPtr<ID2D1ColorContext> colorContext;
+    //m_deviceResources->GetD2DTargetBitmap()->GetColorContext(&colorContext);
+    //int size = colorContext->GetProfileSize();
+    //std::vector<BYTE> color(size);
+    //colorContext->GetProfile(color.data(), size);
+
+    //m_deviceResources->GetD2DDeviceContext()->SaveDrawingState(m_stateBlock.Get());
+    auto size = m_sourceBitmap->GetSize();
+
+    m_deviceResources->GetD2DDeviceContext()->BeginDraw();
+    m_deviceResources->GetD2DDeviceContext()->SetTransform(m_deviceResources->GetOrientationTransform2D());
+    m_deviceResources->GetD2DDeviceContext()->DrawBitmap(
+        m_sourceBitmap.Get(),
+        D2D1::RectF(8, 8, size.width + 8, size.height + 8)
+    );
+
+    //m_deviceResources->GetD2DDeviceContext()->DrawImage(m_glowEffect.Get(),
+    //    {0,0},
+    //    D2D1::RectF(8, 8, size.width + 8, size.height + 8)
+    //);
+
+    m_deviceResources->GetD2DDeviceContext()->EndDraw();
+
+    //m_deviceResources->GetD2DDeviceContext()->RestoreDrawingState(m_stateBlock.Get());
 }
 
 
