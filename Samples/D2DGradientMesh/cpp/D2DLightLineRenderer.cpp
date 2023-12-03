@@ -19,12 +19,14 @@ D2DLightLineRenderer::D2DLightLineRenderer(
         const std::shared_ptr<DX::DeviceResources>& deviceResources,
         std::pair<float, float> begin,
         std::pair<float, float> end,
-        float glowSize
+        float glowSize,
+        float strokeWidth
 ):
 m_deviceResources(deviceResources),
 m_begin(begin),
 m_end(end),
-m_glowSize(glowSize)
+m_glowSize(glowSize),
+m_strokeWidth(strokeWidth)
 {
     CreateDeviceDependentResources();
     CreateWindowSizeDependentResources();
@@ -33,11 +35,13 @@ m_glowSize(glowSize)
 void D2DLightLineRenderer::CreateDeviceDependentResources()
 {
     m_deviceResources->GetD2DDeviceContext()->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_solidBrush);
+    m_deviceResources->GetD2DDeviceContext()->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightGreen), &m_redSolidBrush);
 
     ComPtr<IWICBitmapDecoder> wicBitmapDecoder;
     DX::ThrowIfFailed(
         m_deviceResources->GetWicImagingFactory()->CreateDecoderFromFilename(
-            L"Assets\\storelogo-sdk.png",
+//            L"Assets\\storelogo-sdk.png",
+            L"Assets\\girl.png",
             nullptr,
             GENERIC_READ,
             WICDecodeMetadataCacheOnDemand,
@@ -95,10 +99,6 @@ void D2DLightLineRenderer::CreateDeviceDependentResources()
     //        m_deviceResources->GetDPI()
     //    );
 
-    //DXGI_SWAP_CHAIN_DESC desc;
-    //DX::ThrowIfFailed(
-    //    m_deviceResources->GetSwapChain()->GetDesc(&desc)
-    //);
 
     //DX::ThrowIfFailed(
     //    m_deviceResources->GetD2DDeviceContext()->CreateBitmap(
@@ -107,44 +107,9 @@ void D2DLightLineRenderer::CreateDeviceDependentResources()
     //        &m_sourceBitmap
     //    )
     //);
-
-    ID2D1Effect* effect;
-    if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1GaussianBlur, &effect)))
-    {
-        effect->SetInput(0, *m_sourceBitmap.GetAddressOf());
-        effect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, m_glowSize);
-
-        ID2D1Effect* compositeEffect;
-        if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1Composite, &compositeEffect)))
-        {
-            compositeEffect->SetInputEffect(0, effect);
-            compositeEffect->SetInput(1, *m_sourceBitmap.GetAddressOf());
-
-            ID2D1Effect* blendEffect;
-            if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1Blend, &blendEffect)))
-            {
-                blendEffect->SetInputEffect(0, compositeEffect);
-                blendEffect->SetValue(D2D1_BLEND_PROP_MODE, D2D1_BLEND_MODE_SCREEN);
-                blendEffect->SetValue(D2D1_BLEND_PROP_FORCE_DWORD, D2D1_PROPERTY_FORCE_DWORD);
-
-                ID2D1Effect* colorEffect;
-                if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1ColorManagement, &colorEffect)))
-                {
-                    colorEffect->SetInputEffect(0, blendEffect);
-                    colorEffect->SetValue(D2D1_COLORMANAGEMENT_PROP_SOURCE_COLOR_CONTEXT, nullptr);
-                    colorEffect->SetValue(D2D1_COLORMANAGEMENT_PROP_DESTINATION_COLOR_CONTEXT, nullptr);
-                    colorEffect->SetValue(D2D1_COLORMANAGEMENT_PROP_FORCE_DWORD, D2D1_PROPERTY_FORCE_DWORD);
-
-                    if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1Composite, &m_glowEffect)))
-                    {
-                        m_glowEffect->SetInputEffect(0, colorEffect);
-                        m_glowEffect->SetInput(1, *m_sourceBitmap.GetAddressOf());
-                        m_glowEffect->SetValue(D2D1_COMPOSITE_PROP_MODE, D2D1_COMPOSITE_MODE_DESTINATION_OVER);
-                    }
-                }
-            }
-        }
-    }
+    CreateTargetBitmap();
+    CreateGeometry();
+    CreateEffect();
 }
 
 void D2DLightLineRenderer::CreateWindowSizeDependentResources()
@@ -156,35 +121,15 @@ void D2DLightLineRenderer::ReleaseDeviceDependentResources(){
     m_solidBrush.Reset();
     m_glowEffect.Reset();
     m_sourceBitmap.Reset();
+    m_targetBitmap.Reset();
+    m_targetAssociateBitmap.Reset();
     m_stateBlock.Reset();
+    m_pathGeometry.Reset();
 }
 
 void D2DLightLineRenderer::Render(){
     //m_deviceResources->GetD2DDeviceContext()->SetTarget(m_sourceBitmap.Get());
 
-    m_deviceResources->GetD2DDeviceContext()->BeginDraw();
-
-    m_deviceResources->GetD2DDeviceContext()->Clear(D2D1::ColorF(D2D1::ColorF::CornflowerBlue));
-
-    Windows::Foundation::Size logicalSize = m_deviceResources->GetLogicalSize();
-
-    // Translate to the center of the window.
-    m_deviceResources->GetD2DDeviceContext()->SetTransform(
-                    D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
-            m_deviceResources->GetOrientationTransform2D()
-            );
-
-    // Draw the gradient mesh.
-    m_deviceResources->GetD2DDeviceContext()->DrawLine(
-        { m_begin.first,  m_begin.second },
-        { m_end.first,  m_end.second },
-        *m_solidBrush.GetAddressOf());
-
-    HRESULT hr = m_deviceResources->GetD2DDeviceContext()->EndDraw();
-    if (hr != D2DERR_RECREATE_TARGET)
-    {
-        DX::ThrowIfFailed(hr);
-    }
     //m_deviceResources->GetD2DDeviceContext()->SetTarget(m_deviceResources->GetD2DTargetBitmap());
 
     //ComPtr<ID2D1ColorContext> colorContext;
@@ -194,26 +139,136 @@ void D2DLightLineRenderer::Render(){
     //colorContext->GetProfile(color.data(), size);
 
     //m_deviceResources->GetD2DDeviceContext()->SaveDrawingState(m_stateBlock.Get());
-    auto size = m_sourceBitmap->GetSize();
+    auto icoSize = m_sourceBitmap->GetSize();
+    auto size = m_targetAssociateBitmap->GetSize();
 
     m_deviceResources->GetD2DDeviceContext()->BeginDraw();
+    //m_deviceResources->GetD2DDeviceContext()->Clear(D2D1::ColorF(D2D1::ColorF::CornflowerBlue));
     m_deviceResources->GetD2DDeviceContext()->SetTransform(m_deviceResources->GetOrientationTransform2D());
-    m_deviceResources->GetD2DDeviceContext()->DrawBitmap(
-        m_sourceBitmap.Get(),
-        D2D1::RectF(8, 8, size.width + 8, size.height + 8)
-    );
-
+ 
     //m_deviceResources->GetD2DDeviceContext()->DrawImage(m_glowEffect.Get(),
     //    {0,0},
     //    D2D1::RectF(8, 8, size.width + 8, size.height + 8)
     //);
+
+    m_deviceResources->GetD2DDeviceContext()->DrawImage(m_glowEffect.Get(),
+     { 0,0 },
+     D2D1::RectF(0, 0, size.width , size.height)
+    );
+
+    m_deviceResources->GetD2DDeviceContext()->DrawBitmap(
+     m_sourceBitmap.Get(),
+     D2D1::RectF(8, 8, icoSize.width + 8, icoSize.height + 8)
+    );
 
     m_deviceResources->GetD2DDeviceContext()->EndDraw();
 
     //m_deviceResources->GetD2DDeviceContext()->RestoreDrawingState(m_stateBlock.Get());
 }
 
+void D2DLightLineRenderer::CreateTargetBitmap()
+{
+    DXGI_SWAP_CHAIN_DESC desc;
+    DX::ThrowIfFailed(
+        m_deviceResources->GetSwapChain()->GetDesc(&desc)
+    );
+    m_deviceResources->GetD2DDeviceContext()->CreateCompatibleRenderTarget(D2D1::SizeF(desc.BufferDesc.Width, desc.BufferDesc.Height),
+        &m_targetBitmap);
 
+    //渲染到目标贴图
+    {
+        m_targetBitmap->BeginDraw();
+
+        m_targetBitmap->Clear(D2D1::ColorF(D2D1::ColorF::CornflowerBlue));
+
+        Windows::Foundation::Size logicalSize = m_deviceResources->GetLogicalSize();
+
+        // Translate to the center of the window.
+        m_targetBitmap->SetTransform(
+                        D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
+                m_deviceResources->GetOrientationTransform2D()
+        );
+        
+        m_targetBitmap->DrawLine(
+            { m_begin.first,  m_begin.second },
+            { m_end.first,  m_end.second },
+            *m_solidBrush.GetAddressOf());
+
+        HRESULT hr = m_targetBitmap->EndDraw();
+        if (hr != D2DERR_RECREATE_TARGET)
+        {
+            DX::ThrowIfFailed(hr);
+        }
+    }
+
+    DX::ThrowIfFailed(m_targetBitmap->GetBitmap(&m_targetAssociateBitmap));
+}
+
+void D2DLightLineRenderer::CreateGeometry()
+{
+    DX::ThrowIfFailed(m_deviceResources->GetD2DFactory()->CreatePathGeometry(&m_pathGeometry));
+    Microsoft::WRL::ComPtr <ID2D1GeometrySink> pSink;
+    DX::ThrowIfFailed(m_pathGeometry->Open(&pSink));
+    pSink->SetFillMode(D2D1_FILL_MODE_WINDING);
+    pSink->BeginFigure({ m_begin.first,  m_begin.second }, D2D1_FIGURE_BEGIN_FILLED);
+     pSink->AddLine({ m_end.first,  m_end.second });
+    //pSink->BeginFigure({ m_begin.first,  m_begin.second + 100 }, D2D1_FIGURE_BEGIN_FILLED);
+    //pSink->AddLine({ m_end.first,  m_end.second + 100 });
+    pSink->EndFigure(D2D1_FIGURE_END_CLOSED);
+    pSink->Close();
+    pSink.Reset();
+}
+
+void D2DLightLineRenderer::CreateEffect()
+{
+    //边缘泛光效果
+  /*  {
+        ID2D1Effect* effect;
+        if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1GaussianBlur, &effect)))
+        {
+            effect->SetInput(0, *m_sourceBitmap.GetAddressOf());
+            effect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, m_glowSize);
+
+            ID2D1Effect* compositeEffect;
+            if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1Composite, &compositeEffect)))
+            {
+                compositeEffect->SetInputEffect(0, effect);
+                compositeEffect->SetInput(1, *m_sourceBitmap.GetAddressOf());
+
+                ID2D1Effect* blendEffect;
+                if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1Blend, &blendEffect)))
+                {
+                    blendEffect->SetInputEffect(0, compositeEffect);
+                    blendEffect->SetValue(D2D1_BLEND_PROP_MODE, D2D1_BLEND_MODE_SCREEN);
+                    blendEffect->SetValue(D2D1_BLEND_PROP_FORCE_DWORD, D2D1_PROPERTY_FORCE_DWORD);
+
+                    ID2D1Effect* colorEffect;
+                    if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1ColorManagement, &colorEffect)))
+                    {
+                        colorEffect->SetInputEffect(0, blendEffect);
+                        colorEffect->SetValue(D2D1_COLORMANAGEMENT_PROP_SOURCE_COLOR_CONTEXT, nullptr);
+                        colorEffect->SetValue(D2D1_COLORMANAGEMENT_PROP_DESTINATION_COLOR_CONTEXT, nullptr);
+                        colorEffect->SetValue(D2D1_COLORMANAGEMENT_PROP_FORCE_DWORD, D2D1_PROPERTY_FORCE_DWORD);
+
+                        if (SUCCEEDED(m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1Composite, &m_glowEffect)))
+                        {
+                            m_glowEffect->SetInputEffect(0, colorEffect);
+                            m_glowEffect->SetInput(1, *m_sourceBitmap.GetAddressOf());
+                            m_glowEffect->SetValue(D2D1_COMPOSITE_PROP_MODE, D2D1_COMPOSITE_MODE_DESTINATION_OVER);
+                        }
+                    }
+                }
+            }
+        }
+    }*/
+//实验
+    {
+        m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1GaussianBlur, &m_glowEffect);
+
+        m_glowEffect->SetInput(0, m_targetAssociateBitmap.Get());
+        m_glowEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, 3.0f);
+    }
+}
 
 
 

@@ -39,7 +39,8 @@ D2DGradientMeshMain::D2DGradientMeshMain(const std::shared_ptr<DX::DeviceResourc
             m_deviceResources,
             {0,90},
             {240,90},
-            10
+            3.0f,
+            2
             ));
 
     m_sampleOverlay = std::unique_ptr<SampleOverlay>(new SampleOverlay(m_deviceResources, L"Direct2D Gradient Mesh Sample"));
