@@ -40,8 +40,8 @@ void D2DLightLineRenderer::CreateDeviceDependentResources()
     ComPtr<IWICBitmapDecoder> wicBitmapDecoder;
     DX::ThrowIfFailed(
         m_deviceResources->GetWicImagingFactory()->CreateDecoderFromFilename(
-//            L"Assets\\storelogo-sdk.png",
-            L"Assets\\girl.png",
+            L"Assets\\storelogo-sdk.png",
+            //L"Assets\\girl.png",
             nullptr,
             GENERIC_READ,
             WICDecodeMetadataCacheOnDemand,
