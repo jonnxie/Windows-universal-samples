@@ -35,7 +35,7 @@ m_strokeWidth(strokeWidth)
 void D2DLightLineRenderer::CreateDeviceDependentResources()
 {
     m_deviceResources->GetD2DDeviceContext()->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_solidBrush);
-    m_deviceResources->GetD2DDeviceContext()->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightGreen), &m_redSolidBrush);
+    m_deviceResources->GetD2DDeviceContext()->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &m_redSolidBrush);
 
     ComPtr<IWICBitmapDecoder> wicBitmapDecoder;
     DX::ThrowIfFailed(
@@ -151,14 +151,37 @@ void D2DLightLineRenderer::Render(){
     //    D2D1::RectF(8, 8, size.width + 8, size.height + 8)
     //);
 
+    //m_deviceResources->GetD2DDeviceContext()->DrawBitmap(
+    //    m_targetAssociateBitmap.Get(),
+    //    D2D1::RectF(0, 0, size.width, size.height)
+    //);
+
     m_deviceResources->GetD2DDeviceContext()->DrawImage(m_glowEffect.Get(),
      { 0,0 },
      D2D1::RectF(0, 0, size.width , size.height)
     );
 
     m_deviceResources->GetD2DDeviceContext()->DrawBitmap(
-     m_sourceBitmap.Get(),
-     D2D1::RectF(8, 8, icoSize.width + 8, icoSize.height + 8)
+        m_sourceBitmap.Get(),
+        D2D1::RectF(8, 8, icoSize.width + 8, icoSize.height + 8)
+    );
+
+
+    Windows::Foundation::Size logicalSize = m_deviceResources->GetLogicalSize();
+
+    m_deviceResources->GetD2DDeviceContext()->SetTransform(
+                D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
+        m_deviceResources->GetOrientationTransform2D()
+    );
+
+    m_deviceResources->GetD2DDeviceContext()->DrawLine(
+     { m_begin.first,  m_begin.second },
+     { m_end.first,  m_end.second },
+     *m_solidBrush.GetAddressOf());
+
+    m_deviceResources->GetD2DDeviceContext()->FillRectangle(
+    { 5, 5, 55, 55 },
+    *m_redSolidBrush.GetAddressOf()
     );
 
     m_deviceResources->GetD2DDeviceContext()->EndDraw();
@@ -188,11 +211,31 @@ void D2DLightLineRenderer::CreateTargetBitmap()
                         D2D1::Matrix3x2F::Translation(logicalSize.Width / 2.0f, logicalSize.Height / 2.0f) *
                 m_deviceResources->GetOrientationTransform2D()
         );
-        
+
         m_targetBitmap->DrawLine(
+                { m_begin.first,  m_begin.second },
+                { m_end.first,  m_end.second },
+                *m_redSolidBrush.GetAddressOf()
+                );
+
+        //FLOAT left;
+        //FLOAT top;
+        //FLOAT right;
+        //FLOAT bottom;
+
+        m_targetBitmap->FillRectangle(
+        {5, 5, 55, 55},
+        *m_redSolidBrush.GetAddressOf()
+       );
+
+
+
+            //,3.0);
+
+ /*       m_targetBitmap->DrawLine(
             { m_begin.first,  m_begin.second },
             { m_end.first,  m_end.second },
-            *m_solidBrush.GetAddressOf());
+            *m_solidBrush.GetAddressOf());*/
 
         HRESULT hr = m_targetBitmap->EndDraw();
         if (hr != D2DERR_RECREATE_TARGET)
@@ -268,6 +311,16 @@ void D2DLightLineRenderer::CreateEffect()
         m_glowEffect->SetInput(0, m_targetAssociateBitmap.Get());
         m_glowEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, 3.0f);
     }
+
+    {
+        //m_deviceResources->GetD2DDeviceContext()->CreateEffect(CLSID_D2D1ColorMatrix, &m_glowEffect);
+        //m_glowEffect->SetInput(0, m_targetAssociateBitmap.Get());
+        //D2D1_MATRIX_5X4_F matrix = D2D1::Matrix5x4F(0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0);
+        //m_glowEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, matrix);
+
+    }
+
+
 }
 
 

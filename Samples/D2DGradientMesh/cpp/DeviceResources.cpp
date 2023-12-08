@@ -407,6 +407,8 @@ void DX::DeviceResources::SetLogicalSize(Windows::Foundation::Size logicalSize)
     }
 }
 
+
+
 // This method is called in the event handler for the DpiChanged event.
 void DX::DeviceResources::SetDpi(float dpi)
 {
