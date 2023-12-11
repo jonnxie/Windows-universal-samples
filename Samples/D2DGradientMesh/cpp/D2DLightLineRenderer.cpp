@@ -184,6 +184,18 @@ void D2DLightLineRenderer::Render(){
     *m_redSolidBrush.GetAddressOf()
     );
 
+
+    m_deviceResources->GetD2DDeviceContext()->DrawLine(
+   { m_begin.first,  m_begin.second + 100},
+   { m_end.first,  m_end.second + 100 },
+   *m_solidBrush.GetAddressOf());
+
+    m_deviceResources->GetD2DDeviceContext()->FillRectangle(
+    { 5, 105, 55, 155 },
+    *m_redSolidBrush.GetAddressOf()
+    );
+
+
     m_deviceResources->GetD2DDeviceContext()->EndDraw();
 
     //m_deviceResources->GetD2DDeviceContext()->RestoreDrawingState(m_stateBlock.Get());
